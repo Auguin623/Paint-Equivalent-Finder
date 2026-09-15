@@ -1,4 +1,5 @@
 {
+  "id": "/paint-equivalent-finder",
   "name": "Paint Equivalent Finder",
   "short_name": "PaintFinder",
   "description": "Find cross-brand paint equivalents across Citadel, Vallejo, Army Painter, Pro Acryl, AK Interactive, Two Thin Coats & P3. 4,388 paints with Delta E color matching.",
@@ -7,55 +8,22 @@
   "background_color": "#121418",
   "theme_color": "#d4af37",
   "orientation": "any",
-  "categories": [
-    "utilities",
-    "lifestyle"
-  ],
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["utilities", "lifestyle"],
   "icons": [
-    {
-      "src": "icons/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "screenshots": [],
-  "related_applications": [],
-  "prefer_related_applications": false
+  "screenshots": [
+    { "src": "screenshots/finder.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Browse and search 4,388 paints across 7 brands" },
+    { "src": "screenshots/equivalents.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Find cross-brand equivalents with Delta E matching" },
+    { "src": "screenshots/projects.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Track projects with paint checklists and notes" }
+  ]
 }
