@@ -1,9 +1,10 @@
 {
-  "id": "/paint-equivalent-finder",
+  "id": "/Paint-Equivalent-Finder/",
   "name": "Paint Equivalent Finder",
   "short_name": "PaintFinder",
   "description": "Find cross-brand paint equivalents across Citadel, Vallejo, Army Painter, Pro Acryl, AK Interactive, Two Thin Coats & P3. 4,388 paints with Delta E color matching.",
-  "start_url": "/index.html",
+  "start_url": "/Paint-Equivalent-Finder/index.html",
+  "scope": "/Paint-Equivalent-Finder/",
   "display": "standalone",
   "background_color": "#121418",
   "theme_color": "#d4af37",

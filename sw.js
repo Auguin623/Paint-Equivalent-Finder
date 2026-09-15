@@ -1,8 +1,8 @@
-const CACHE_NAME = 'paint-finder-v1';
+const CACHE_NAME = 'paint-finder-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  '/Paint-Equivalent-Finder/',
+  '/Paint-Equivalent-Finder/index.html',
+  '/Paint-Equivalent-Finder/manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
 ];
 
