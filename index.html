@@ -146,9 +146,157 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;back
 .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:300;align-items:center;justify-content:center;cursor:pointer}
 .lightbox.open{display:flex}
 .lightbox img{max-width:90vw;max-height:90vh;border-radius:8px}
+
+/* SCAN CONFIRMATION OVERLAY */
+.scan-confirm-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(59, 165, 93, 0.35); opacity: 0;
+  transition: opacity 0.3s; pointer-events: none; z-index: 10;
+  border-radius: 8px;
+}
+.scan-confirm-overlay.show { opacity: 1; }
+.scan-confirm-overlay i, .scan-confirm-overlay span {
+  font-size: 80px; color: rgba(255,255,255,0.85);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+
+
+/* DELTA E TOGGLE */
+.de-toggle { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface2); border-radius: 8px; cursor: pointer; user-select: none; font-size: 12px; color: var(--text2); }
+.de-toggle:hover { background: var(--surface3); }
+.de-toggle .toggle-track { width: 36px; height: 20px; border-radius: 10px; background: var(--surface3); position: relative; transition: background 0.2s; flex-shrink: 0; }
+.de-toggle.active .toggle-track { background: var(--accent); }
+.de-toggle .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--text); position: absolute; top: 2px; left: 2px; transition: left 0.2s; }
+.de-toggle.active .toggle-thumb { left: 18px; }
+.de-toggle .toggle-label { font-weight: 400; color: var(--text2); transition: all 0.2s; }
+.de-toggle .toggle-label.active-label { font-weight: 700; color: var(--text); }
+
+
+/* WELCOME MODAL */
+.welcome-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; backdrop-filter: blur(4px);
+  animation: welcomeFadeIn 0.4s ease;
+}
+@keyframes welcomeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.welcome-modal {
+  background: var(--surface); border-radius: 16px; max-width: 440px; width: 100%;
+  max-height: 85vh; overflow-y: auto; border: 1px solid var(--border);
+  animation: welcomeSlideUp 0.4s ease;
+}
+@keyframes welcomeSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.welcome-header {
+  text-align: center; padding: 28px 24px 16px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.04));
+  border-radius: 16px 16px 0 0;
+}
+.welcome-header h2 { color: var(--accent); font-size: 22px; margin: 0 0 4px; }
+.welcome-header p { color: var(--text2); font-size: 13px; margin: 0; }
+.welcome-body { padding: 20px 24px; }
+.welcome-section { margin-bottom: 18px; }
+.welcome-section h3 { color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; }
+.welcome-feature { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.welcome-feature .wf-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.welcome-feature .wf-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.welcome-feature .wf-text strong { color: var(--text); }
+.welcome-divider { height: 1px; background: var(--border); margin: 16px 0; }
+.welcome-de-compare { display: flex; gap: 12px; margin-top: 8px; }
+.welcome-de-card {
+  flex: 1; padding: 10px 12px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text2); line-height: 1.5;
+}
+.welcome-de-card strong { display: block; color: var(--text); font-size: 13px; margin-bottom: 4px; }
+.welcome-de-card.recommended { border-color: var(--accent); }
+.welcome-de-card.recommended strong { color: var(--accent); }
+.welcome-footer {
+  padding: 16px 24px 24px; text-align: center;
+}
+.welcome-footer p { color: var(--text2); font-size: 12px; margin: 0 0 14px; line-height: 1.5; }
+.welcome-btn {
+  background: var(--accent); color: #000; border: none; padding: 12px 36px;
+  border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
+  transition: background 0.2s; width: 100%;
+}
+.welcome-btn:hover { background: var(--accent2); }
+.welcome-badges { display: flex; gap: 6px; margin-top: 8px; justify-content: center; }
+.welcome-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.wb-green { background: rgba(59,165,93,0.2); color: #3ba55d; }
+.wb-yellow { background: rgba(240,178,50,0.2); color: #f0b232; }
+.wb-red { background: rgba(237,66,69,0.2); color: #ed4245; }
+
 </style>
 </head>
 <body>
+
+<div class="welcome-overlay" id="welcomeOverlay" style="display:none">
+  <div class="welcome-modal">
+    <div class="welcome-header">
+      <h2>🎨 Welcome to Paint Equivalent Finder!</h2>
+      <p>4,388 paints across 7 brands, right in your pocket</p>
+    </div>
+    <div class="welcome-body">
+      <div class="welcome-section">
+        <h3>What You Can Do</h3>
+        <div class="welcome-feature">
+          <span class="wf-icon">🔍</span>
+          <span class="wf-text"><strong>Finder</strong> &mdash; Browse and search all 4,388 paints. Filter by brand, type, and range.</span>
+        </div>
+        <div class="welcome-feature">
+          <span class="wf-icon">🎨</span>
+          <span class="wf-text"><strong>Color Picker</strong> &mdash; Pick any color and find the 20 closest matching paints across all brands.</span>
+        </div>
+        <div class="welcome-feature">
+          <span class="wf-icon">🔄</span>
+          <span class="wf-text"><strong>Cross-Brand Equivalents</strong> &mdash; Tap any paint to see the best match from every other brand.</span>
+        </div>
+        <div class="welcome-feature">
+          <span class="wf-icon">📋</span>
+          <span class="wf-text"><strong>Projects</strong> &mdash; Create checklists for your painting projects. Add notes and reference photos.</span>
+        </div>
+        <div class="welcome-feature">
+          <span class="wf-icon">📦</span>
+          <span class="wf-text"><strong>My Collection</strong> &mdash; Track what you own. Scan barcodes to quickly add paints.</span>
+        </div>
+      </div>
+
+      <div class="welcome-divider"></div>
+
+      <div class="welcome-section">
+        <h3>Color Matching Explained</h3>
+        <p style="font-size:13px;color:var(--text2);margin:0 0 10px;line-height:1.5;">
+          Match quality is measured by Delta E, the perceptual distance between two colors. You can switch between two algorithms using the toggle in the header:
+        </p>
+        <div class="welcome-de-compare">
+          <div class="welcome-de-card">
+            <strong>CIE76 (Fast)</strong>
+            Simple, quick calculation. Great for general browsing. Works well for most colors.
+          </div>
+          <div class="welcome-de-card recommended">
+            <strong>CIEDE2000 (Accurate)</strong>
+            Advanced formula that better matches how your eyes see color. Best for tricky shades like blues and purples.
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin:10px 0 0;line-height:1.5;">Match badges tell you how close a match is at a glance:</p>
+        <div class="welcome-badges">
+          <span class="welcome-badge wb-green">● Excellent</span>
+          <span class="welcome-badge wb-yellow">● Good</span>
+          <span class="welcome-badge wb-red">● Fair</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="welcome-footer">
+      <p>All your data stays on your device. No account needed, no tracking, works completely offline.</p>
+      <p style="color:var(--accent);font-size:13px;margin-bottom:14px;">Thanks for trying out the app! 🙏</p>
+      <button class="welcome-btn" onclick="dismissWelcome()">Let's Go!</button>
+    </div>
+  </div>
+</div>
+
 
 <div class="header">
   <div class="header-icon"><i class="fas fa-palette"></i></div>
@@ -161,6 +309,13 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;back
     <button class="tab-btn" onclick="switchPanel('picker', event)"><i class="fas fa-eye-dropper"></i> Color Picker</button>
     <button class="tab-btn" onclick="switchPanel('projects', event)"><i class="fas fa-folder-open"></i> Projects</button>
     <button class="tab-btn" onclick="switchPanel('collection', event)"><i class="fas fa-box-open"></i> My Collection</button>
+  </div>
+  <div style="padding:4px 12px;">
+    <div class="de-toggle" id="deToggle" onclick="toggleDeltaMode()" title="Switch between CIE76 (fast) and CIEDE2000 (more accurate)">
+      <span class="toggle-label active-label" id="deToggleLabel">CIE76 (Fast)</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-label" id="deToggleSub">CIEDE2000 (Accurate)</span>
+    </div>
   </div>
 </div>
 
@@ -228,7 +383,7 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;back
       <button class="btn" id="scanBtn" onclick="toggleScanner()"><i class="fas fa-barcode"></i> Start Scanning</button>
       <span style="font-size:11px;color:var(--text2)">Point camera at paint bottle barcode</span>
     </div>
-    <div id="scannerContainer" style="display:none">
+    <div id="scannerContainer" style="display:none;position:relative">
       <div id="qr-reader" style="width:100%;max-width:400px"></div>
     </div>
     <div id="scanResults"></div>
@@ -293,7 +448,7 @@ function init(){
   renderBrandChips('pickerBrandChips',pickerBrands,togglePickerBrand);
   const types=[...new Set(paints.map(p=>p.type))].filter(Boolean).sort();
   ['typeFilter','pickerTypeFilter'].forEach(id=>{const s=document.getElementById(id);types.forEach(t=>s.add(new Option(t,t)))});
-  applyFilters();onPickerChange();renderProjectList();updateCollectionStats();
+  updateToggleUI();applyFilters();onPickerChange();renderProjectList();updateCollectionStats();
 }
 
 function renderBrandChips(cid,activeSet,fn){
@@ -362,7 +517,7 @@ function openModal(p){
   if(allMatches.length>0){
     h+='<div class="modal-section"><h3>Cross-Brand Equivalents</h3>';
     allMatches.forEach(m=>{const mp=paintMap[m.id];if(!mp)return;
-      const dc=m.de<2?'de-excellent':m.de<5?'de-good':'de-fair';
+      const {cls:dc,label:dcLabel}=getDeBadge(m.de);
       h+=`<div class="match-card" onclick="event.stopPropagation();openModal(paintMap[${mp.id}])">
         <div class="match-swatch" style="background:${mp.hex}"></div>
         <div class="match-info"><div class="match-name">${mp.name}${isOwned(mp.id)?' <i class="fas fa-check" style="color:var(--green);font-size:11px"></i>':''}</div>
@@ -384,7 +539,71 @@ function findAllBrandMatches(p){
     if(best)results.push({id:best.id,de:bestDe});
   });return results.sort((a,b)=>a.de-b.de);
 }
-function deltaE(a,b){const dl=a.lab_l-b.lab_l,da=a.lab_a-b.lab_a,db=a.lab_b-b.lab_b;return Math.sqrt(dl*dl+da*da+db*db)}
+let useCIEDE2000 = localStorage.getItem('pf_delta_mode') === 'ciede2000';
+
+function deltaE(a, b) {
+  return useCIEDE2000 ? deltaE2000(a, b) : deltaE76(a, b);
+}
+
+function deltaE76(a,b){const dl=a.lab_l-b.lab_l,da=a.lab_a-b.lab_a,db=a.lab_b-b.lab_b;return Math.sqrt(dl*dl+da*da+db*db)}
+
+function deltaE2000(a, b) {
+  const L1=a.lab_l,a1=a.lab_a,b1=a.lab_b,L2=b.lab_l,a2=b.lab_a,b2=b.lab_b;
+  const rad=Math.PI/180,deg=180/Math.PI;
+  const C1=Math.sqrt(a1*a1+b1*b1),C2=Math.sqrt(a2*a2+b2*b2);
+  const Cb=(C1+C2)/2,Cb7=Math.pow(Cb,7);
+  const G=0.5*(1-Math.sqrt(Cb7/(Cb7+6103515625)));
+  const ap1=a1*(1+G),ap2=a2*(1+G);
+  const Cp1=Math.sqrt(ap1*ap1+b1*b1),Cp2=Math.sqrt(ap2*ap2+b2*b2);
+  let hp1=Math.atan2(b1,ap1)*deg;if(hp1<0)hp1+=360;
+  let hp2=Math.atan2(b2,ap2)*deg;if(hp2<0)hp2+=360;
+  const dLp=L2-L1,dCp=Cp2-Cp1;
+  let dhp;
+  if(Cp1*Cp2===0)dhp=0;
+  else if(Math.abs(hp2-hp1)<=180)dhp=hp2-hp1;
+  else if(hp2-hp1>180)dhp=hp2-hp1-360;
+  else dhp=hp2-hp1+360;
+  const dHp=2*Math.sqrt(Cp1*Cp2)*Math.sin(dhp/2*rad);
+  const Lbp=(L1+L2)/2,Cbp=(Cp1+Cp2)/2;
+  let hbp;
+  if(Cp1*Cp2===0)hbp=hp1+hp2;
+  else if(Math.abs(hp1-hp2)<=180)hbp=(hp1+hp2)/2;
+  else if(hp1+hp2<360)hbp=(hp1+hp2+360)/2;
+  else hbp=(hp1+hp2-360)/2;
+  const T=1-0.17*Math.cos((hbp-30)*rad)+0.24*Math.cos(2*hbp*rad)+0.32*Math.cos((3*hbp+6)*rad)-0.20*Math.cos((4*hbp-63)*rad);
+  const Lbp50sq=(Lbp-50)*(Lbp-50);
+  const SL=1+0.015*Lbp50sq/Math.sqrt(20+Lbp50sq);
+  const SC=1+0.045*Cbp,SH=1+0.015*Cbp*T;
+  const Cbp7=Math.pow(Cbp,7);
+  const RC=2*Math.sqrt(Cbp7/(Cbp7+6103515625));
+  const dtheta=30*Math.exp(-((hbp-275)/25)*((hbp-275)/25));
+  const RT=-Math.sin(2*dtheta*rad)*RC;
+  const valL=dLp/SL,valC=dCp/SC,valH=dHp/SH;
+  return Math.sqrt(valL*valL+valC*valC+valH*valH+RT*valC*valH);
+}
+
+function getDeBadge(de) {
+  if (useCIEDE2000) return { cls: de<1?'de-excellent':de<3?'de-good':'de-fair', label: de<1?'Excellent':de<3?'Good':'Fair' };
+  return { cls: de<2?'de-excellent':de<5?'de-good':'de-fair', label: de<2?'Excellent':de<5?'Good':'Fair' };
+}
+
+function toggleDeltaMode() {
+  useCIEDE2000 = !useCIEDE2000;
+  localStorage.setItem('pf_delta_mode', useCIEDE2000 ? 'ciede2000' : 'cie76');
+  updateToggleUI();
+  const browsePanel = document.getElementById('panel-browse');
+  if (browsePanel && browsePanel.classList.contains('active')) applyFilters();
+  const pickerPanel = document.getElementById('panel-picker');
+  if (pickerPanel && pickerPanel.classList.contains('active')) onPickerChange();
+}
+
+function updateToggleUI() {
+  const el = document.getElementById('deToggle');
+  if (!el) return;
+  if (useCIEDE2000) el.classList.add('active'); else el.classList.remove('active');
+  document.getElementById('deToggleLabel').classList.toggle('active-label', !useCIEDE2000);
+  document.getElementById('deToggleSub').classList.toggle('active-label', useCIEDE2000);
+}
 
 // === COLOR PICKER ===
 function onPickerChange(){document.getElementById('hexInput').value=document.getElementById('colorPicker').value;findClosestPaints(document.getElementById('colorPicker').value)}
@@ -398,7 +617,7 @@ function findClosestPaints(hex){
   scored.sort((a,b)=>a.de-b.de);
   const c=document.getElementById('pickerResults'),top=scored.slice(0,20);
   if(!top.length){c.innerHTML='<div class="no-results"><p>No paints match</p></div>';return}
-  c.innerHTML='';top.forEach(({p,de})=>{const dc=de<2?'de-excellent':de<5?'de-good':'de-fair';
+  c.innerHTML='';top.forEach(({p,de})=>{const {cls:dc}=getDeBadge(de);
     const card=document.createElement('div');card.className='match-card';card.onclick=()=>openModal(p);
     card.innerHTML=`<div class="match-swatch" style="background:${p.hex}"></div>
       <div class="match-info"><div class="match-name">${p.name}${isOwned(p.id)?' <i class="fas fa-check" style="color:var(--green);font-size:11px"></i>':''}</div>
@@ -524,7 +743,10 @@ function stopScanner(){
   try{if(scanner&&scanner.isScanning)scanner.stop().catch(()=>{})}catch(e){}
   document.getElementById('scannerContainer').style.display='none';
 }
+let scanCooldown = false;
 function onScanSuccess(code){
+  if (scanCooldown) return;
+  scanCooldown = true;
   const paintId=BARCODES[code];
   const results=document.getElementById('scanResults');
   if(paintId&&paintMap[paintId]){
@@ -547,6 +769,13 @@ function onScanSuccess(code){
     results.prepend(div);
     while(results.children.length>10)results.removeChild(results.lastChild);
   }
+  // Show confirmation overlay and start cooldown
+  const overlay = document.getElementById('scanOverlay');
+  if (overlay) {
+    overlay.classList.add('show');
+    setTimeout(() => overlay.classList.remove('show'), 1500);
+  }
+  setTimeout(() => { scanCooldown = false; }, 3000);
 }
 
 // === COLOR CONVERSION ===
@@ -564,7 +793,23 @@ function switchPanel(name, evt){
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// === WELCOME MODAL ===
+function showWelcomeIfNeeded() {
+  if (!localStorage.getItem('pf_welcomed')) {
+    document.getElementById('welcomeOverlay').style.display = 'flex';
+  }
+}
+function dismissWelcome() {
+  localStorage.setItem('pf_welcomed', '1');
+  const overlay = document.getElementById('welcomeOverlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.3s';
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+}
+
 init();
+showWelcomeIfNeeded();
 try{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}
 </script>
 </body></html>
