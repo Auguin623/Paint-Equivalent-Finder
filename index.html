@@ -315,6 +315,19 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;back
 }
 .img-picker-hint { font-size: 11px; color: var(--text2); margin-top: 4px; }
 
+
+/* MIX LAB */
+.mix-card { background: var(--surface2); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; }
+.mix-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.mix-target-name { font-size: 13px; font-weight: 600; }
+.mix-target-meta { font-size: 11px; color: var(--text2); }
+.mix-recipe { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.mix-paint { display: flex; align-items: center; gap: 4px; }
+.mix-swatch { width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+.mix-result-swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); flex-shrink: 0; }
+.mix-arrow { color: var(--text2); }
+.mix-load-more { text-align: center; padding: 10px; }
+
 </style>
 </head>
 <body>
@@ -504,6 +517,12 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;back
     </div>
     <div id="scanResults"></div>
   </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <div class="section-title" style="margin:0">Mix Lab</div>
+    <span style="font-size:11px;color:var(--text2)">Colors you can mix from your collection</span>
+    <button class="btn" id="mixLabToggle" onclick="toggleMixLab()" style="margin-left:auto;font-size:11px;padding:5px 10px">Show Mixes</button>
+  </div>
+  <div id="mixLabResults" style="display:none;margin-bottom:20px"></div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
     <div class="section-title" style="margin:0">My Paints</div>
     <input type="text" class="filter-input" id="collectionSearch" placeholder="Search collection..." oninput="renderCollection()" style="width:200px">
@@ -740,76 +759,148 @@ function adjustForPrimer(lab, primer) {
   return { lab_l: L, lab_a: a, lab_b: b };
 }
 
-// === MIXING SUGGESTIONS ===
-// Given a target paint, find two owned paints that mix to approximate it
-function findMixSuggestions(target, maxResults) {
-  maxResults = maxResults || 3;
-  if (!collection || collection.size < 2) return [];
+
+// === MIX LAB ===
+let mixLabVisible = false;
+let mixLabCache = null;
+
+function toggleMixLab() {
+  mixLabVisible = !mixLabVisible;
+  const results = document.getElementById('mixLabResults');
+  const btn = document.getElementById('mixLabToggle');
   
-  const owned = [...collection].map(id => paintMap[id]).filter(Boolean);
-  if (owned.length < 2) return [];
+  if (mixLabVisible) {
+    results.style.display = 'block';
+    btn.textContent = 'Hide Mixes';
+    renderMixLab();
+  } else {
+    results.style.display = 'none';
+    btn.textContent = 'Show Mixes';
+  }
+}
+
+function renderMixLab() {
+  const results = document.getElementById('mixLabResults');
+  if (!collection || collection.size < 2) {
+    results.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px">Add at least 2 paints to your collection to see mixing suggestions</div>';
+    return;
+  }
   
-  const tL = target.lab_l, tA = target.lab_a, tB = target.lab_b;
-  const results = [];
+  results.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px">Calculating mixes...</div>';
   
-  // Check pairs of owned paints at 25/50/75 mix ratios
-  const ratios = [0.25, 0.5, 0.75];
-  const limit = Math.min(owned.length, 80); // Cap for performance
-  
-  for (let i = 0; i < limit; i++) {
-    for (let j = i + 1; j < limit; j++) {
-      const p1 = owned[i], p2 = owned[j];
-      // Skip if same paint or different type
-      if (p1.type !== target.type) continue;
-      if (p2.type !== target.type) continue;
-      
-      for (const r of ratios) {
-        const mL = p1.lab_l * r + p2.lab_l * (1 - r);
-        const mA = p1.lab_a * r + p2.lab_a * (1 - r);
-        const mB = p1.lab_b * r + p2.lab_b * (1 - r);
-        const de = Math.sqrt((mL-tL)*(mL-tL) + (mA-tA)*(mA-tA) + (mB-tB)*(mB-tB));
+  // Use setTimeout to not block the UI
+  setTimeout(() => {
+    const owned = [...collection].map(id => paintMap[id]).filter(Boolean);
+    const notOwned = paints.filter(p => !collection.has(p.id));
+    
+    const ratios = [0.25, 0.5, 0.75];
+    const allMixes = [];
+    const limit = Math.min(owned.length, 60);
+    
+    for (let i = 0; i < limit; i++) {
+      for (let j = i + 1; j < limit; j++) {
+        const p1 = owned[i], p2 = owned[j];
+        if (p1.type !== p2.type) continue;
         
-        if (de < 8) { // Only suggest if reasonably close
-          results.push({
-            paint1: p1, paint2: p2,
-            ratio: Math.round(r * 100),
-            mixL: mL, mixA: mA, mixB: mB,
-            de: de
-          });
+        for (const r of ratios) {
+          const mL = p1.lab_l * r + p2.lab_l * (1 - r);
+          const mA = p1.lab_a * r + p2.lab_a * (1 - r);
+          const mB = p1.lab_b * r + p2.lab_b * (1 - r);
+          
+          // Find the closest paint you DON'T own
+          let bestMatch = null, bestDe = Infinity;
+          for (const np of notOwned) {
+            if (np.type !== p1.type) continue;
+            const de = Math.sqrt((mL-np.lab_l)*(mL-np.lab_l) + (mA-np.lab_a)*(mA-np.lab_a) + (mB-np.lab_b)*(mB-np.lab_b));
+            if (de < bestDe) { bestDe = de; bestMatch = np; }
+          }
+          
+          if (bestMatch && bestDe < 5) {
+            allMixes.push({
+              paint1: p1, paint2: p2,
+              ratio: Math.round(r * 100),
+              target: bestMatch,
+              de: bestDe,
+              mixHex: labToHex(mL, mA, mB)
+            });
+          }
         }
       }
     }
-  }
-  
-  results.sort((a, b) => a.de - b.de);
-  return results.slice(0, maxResults);
+    
+    // Deduplicate by target paint (keep best mix per target)
+    const bestByTarget = {};
+    allMixes.forEach(m => {
+      if (!bestByTarget[m.target.id] || m.de < bestByTarget[m.target.id].de) {
+        bestByTarget[m.target.id] = m;
+      }
+    });
+    
+    const uniqueMixes = Object.values(bestByTarget).sort((a, b) => a.de - b.de);
+    mixLabCache = uniqueMixes;
+    
+    if (!uniqueMixes.length) {
+      results.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px">No close mixes found. Add more paints to unlock mixing possibilities!</div>';
+      return;
+    }
+    
+    let h = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">' + uniqueMixes.length + ' colors you can mix (showing closest matches from paints you don\'t own)</div>';
+    
+    const show = uniqueMixes.slice(0, 20);
+    show.forEach(m => {
+      const {cls} = getDeBadge(m.de);
+      h += '<div class="mix-card">';
+      h += '<div class="mix-header">';
+      h += '<div class="mix-result-swatch" style="background:' + m.target.hex + '"></div>';
+      h += '<div><div class="mix-target-name">' + m.target.name + '</div>';
+      h += '<div class="mix-target-meta">' + m.target.mfg + ' · ' + m.target.type + ' · <span class="match-de ' + cls + '" style="font-size:10px">ΔE ' + m.de.toFixed(1) + '</span></div></div>';
+      h += '</div>';
+      h += '<div class="mix-recipe">';
+      h += '<div class="mix-paint"><div class="mix-swatch" style="background:' + m.paint1.hex + '"></div>' + m.paint1.name + ' <span style="color:var(--text2)">' + m.ratio + '%</span></div>';
+      h += '<span class="mix-arrow">+</span>';
+      h += '<div class="mix-paint"><div class="mix-swatch" style="background:' + m.paint2.hex + '"></div>' + m.paint2.name + ' <span style="color:var(--text2)">' + (100 - m.ratio) + '%</span></div>';
+      h += '<span class="mix-arrow">→</span>';
+      h += '<div class="mix-swatch" style="background:' + m.mixHex + '" title="Predicted mix color"></div>';
+      h += '</div></div>';
+    });
+    
+    if (uniqueMixes.length > 20) {
+      h += '<div class="mix-load-more"><button class="btn" onclick="showMoreMixes()">Show ' + Math.min(20, uniqueMixes.length - 20) + ' more</button></div>';
+    }
+    
+    results.innerHTML = h;
+  }, 50);
 }
 
-function mixSuggestionHTML(target) {
-  if (!collection || collection.size < 2) return '';
-  const mixes = findMixSuggestions(target);
-  if (!mixes.length) return '';
+let mixLabShown = 20;
+function showMoreMixes() {
+  if (!mixLabCache) return;
+  mixLabShown += 20;
+  const results = document.getElementById('mixLabResults');
+  const show = mixLabCache.slice(0, mixLabShown);
   
-  let h = '<div class="modal-section"><h3>Mixing Suggestions</h3>';
-  h += '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">From paints you own (approximate, based on Lab interpolation)</div>';
-  
-  mixes.forEach(m => {
+  let h = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">' + mixLabCache.length + ' colors you can mix (showing ' + show.length + ')</div>';
+  show.forEach(m => {
     const {cls} = getDeBadge(m.de);
-    const mixHex = labToHex(m.mixL, m.mixA, m.mixB);
-    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;flex-wrap:wrap">';
-    h += '<div style="width:24px;height:24px;border-radius:4px;background:' + m.paint1.hex + ';flex-shrink:0;border:1px solid var(--border)"></div>';
-    h += '<span style="font-size:12px;font-weight:600">' + m.paint1.name + '</span>';
-    h += '<span style="font-size:11px;color:var(--text2)">' + m.ratio + '%</span>';
-    h += '<span style="font-size:12px;color:var(--text2)">+</span>';
-    h += '<div style="width:24px;height:24px;border-radius:4px;background:' + m.paint2.hex + ';flex-shrink:0;border:1px solid var(--border)"></div>';
-    h += '<span style="font-size:12px;font-weight:600">' + m.paint2.name + '</span>';
-    h += '<span style="font-size:11px;color:var(--text2)">' + (100 - m.ratio) + '%</span>';
-    h += '<span style="margin-left:auto;font-size:11px" class="match-de ' + cls + '">\u0394E ' + m.de.toFixed(1) + '</span>';
+    h += '<div class="mix-card">';
+    h += '<div class="mix-header">';
+    h += '<div class="mix-result-swatch" style="background:' + m.target.hex + '"></div>';
+    h += '<div><div class="mix-target-name">' + m.target.name + '</div>';
+    h += '<div class="mix-target-meta">' + m.target.mfg + ' · ' + m.target.type + ' · <span class="match-de ' + cls + '" style="font-size:10px">ΔE ' + m.de.toFixed(1) + '</span></div></div>';
     h += '</div>';
+    h += '<div class="mix-recipe">';
+    h += '<div class="mix-paint"><div class="mix-swatch" style="background:' + m.paint1.hex + '"></div>' + m.paint1.name + ' <span style="color:var(--text2)">' + m.ratio + '%</span></div>';
+    h += '<span class="mix-arrow">+</span>';
+    h += '<div class="mix-paint"><div class="mix-swatch" style="background:' + m.paint2.hex + '"></div>' + m.paint2.name + ' <span style="color:var(--text2)">' + (100 - m.ratio) + '%</span></div>';
+    h += '<span class="mix-arrow">→</span>';
+    h += '<div class="mix-swatch" style="background:' + m.mixHex + '" title="Predicted mix color"></div>';
+    h += '</div></div>';
   });
   
-  h += '</div>';
-  return h;
+  if (mixLabCache.length > mixLabShown) {
+    h += '<div class="mix-load-more"><button class="btn" onclick="showMoreMixes()">Show ' + Math.min(20, mixLabCache.length - mixLabShown) + ' more</button></div>';
+  }
+  results.innerHTML = h;
 }
 
 // Helper: Lab to approximate hex for mix preview
@@ -833,6 +924,7 @@ function labToHex(L, a, b) {
   bl = Math.max(0, Math.min(255, Math.round(gamma(bl) * 255)));
   return '#' + [r, g, bl].map(v => v.toString(16).padStart(2, '0')).join('');
 }
+
 
 function init(){
   renderBrandChips('brandChips',activeBrands,toggleBrand);
@@ -950,8 +1042,6 @@ function openModal(p){
     });
     h+='</div>';
   }
-  // Mixing suggestions (from owned paints)
-  if(!isOwned(p.id)){h+=mixSuggestionHTML(p);}
   body.innerHTML=h;document.getElementById('modalOverlay').classList.add('open');document.body.style.overflow='hidden';
 }
 function closeModal(fromPopstate){
